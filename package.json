@@ -7,9 +7,15 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "deploy": "npx expo export -p web && npx eas-cli@latest deploy"
+    "deploy": "npx expo export -p web && npx eas-cli@latest deploy",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "bun run src/db/migrate.ts",
+    "db:seed": "bun run src/db/seed.ts"
   },
   "dependencies": {
+    "dotenv": "^16.5.0",
+    "drizzle-kit": "^0.31.1",
+    "drizzle-orm": "^0.43.1",
     "expo": "^53.0.4",
     "expo-constants": "~17.1.4",
     "expo-linking": "~7.1.4",
@@ -17,6 +23,7 @@
     "expo-splash-screen": "~0.30.7",
     "expo-status-bar": "~2.2.3",
     "nativewind": "^4.0.1",
+    "postgres": "^3.4.7",
     "react": "19.0.0",
     "react-dom": "19.0.0",
     "react-native": "0.79.1",
