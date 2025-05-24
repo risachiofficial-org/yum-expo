@@ -219,7 +219,7 @@ const RecipeDetailScreen = () => {
 
         {/* Instructions */}
         {recipe.instructions && recipe.instructions.length > 0 && (
-          <View className="mb-6">
+          <View className="mb-6 pb-10">
             <Text className="text-xl font-semibold text-gray-800 mb-3">Instructions</Text>
             {recipe.instructions.map((step, index) => (
               <View key={`instruction-${step.substring(0, 10).replace(/\s+/g, '-')}-${index}`} className="flex-row bg-white p-4 rounded-lg shadow mb-3">

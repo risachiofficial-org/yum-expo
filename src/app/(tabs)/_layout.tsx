@@ -11,28 +11,33 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: colorScheme === 'dark' ? '#ff0000' : '#ff0000',
-        tabBarInactiveTintColor: '#6B7280', // Gray-500
+        tabBarActiveTintColor: colorScheme === 'dark' ? '#FF6347' : '#FF6347', // Tomato Red for active tint
+        tabBarInactiveTintColor: '#A0AEC0', // Cool Gray 400 for inactive tint
         tabBarStyle: {
-          backgroundColor: 'white',
-          borderTopWidth: Platform.OS === 'ios' ? 0 : 1, // No top border on iOS, subtle on Android
-          borderTopColor: '#E5E7EB', // Gray-200
-          height: Platform.OS === 'ios' ? 90 : 60, // Adjust height for different platforms
-          paddingBottom: Platform.OS === 'ios' ? 30 : 5, // Padding for safe area on iOS
+          backgroundColor: colorScheme === 'dark' ? '#1F2937' : '#FFFFFF', // Dark Gray 800 or White
+          borderTopWidth: 1,
+          borderTopColor: colorScheme === 'dark' ? '#374151' : '#E5E7EB', // Dark Gray 700 or Gray 200
+          height: Platform.OS === 'ios' ? 85 : 65, // Slightly adjusted height
+          paddingBottom: Platform.OS === 'ios' ? 25 : 5,
+          paddingTop: Platform.OS === 'ios' ? 10 : 5, // Added paddingTop for better spacing
         },
         tabBarLabelStyle: {
-          fontSize: 10,
-          fontWeight: '500',
-          marginTop: -5, // Adjust label position
+          fontSize: 11, // Slightly increased font size
+          fontWeight: '600', // Semi-bold for better readability
+          marginTop: Platform.OS === 'ios' ? -2 : -4, // Fine-tuned margin
         },
-        headerShown: Platform.OS !== 'web',
+        headerShown: Platform.OS !== 'web', // Keep headerShown logic
+        headerStyle: {
+          backgroundColor: colorScheme === 'dark' ? '#1F2937' : '#FFFFFF', // Match tab bar bg
+        },
+        headerTintColor: colorScheme === 'dark' ? '#FFFFFF' : '#1F2937', // Contrast with header bg
       }}
     >
       <Tabs.Screen
         name="index" // This refers to src/app/(tabs)/index.tsx
         options={{
           title: "Home",
-          tabBarIcon: ({ color }) => <FontAwesome name="home" size={28} style={{ marginBottom: -3 }} color={color} />,
+          tabBarIcon: ({ color, focused }) => <FontAwesome name="home" size={focused ? 30 : 28} style={{ marginBottom: -3 }} color={color} />,
           headerShown: false,
           // headerRight: () => (
           //   <Link href="/modal" asChild>
@@ -54,7 +59,7 @@ export default function TabLayout() {
         name="explore"
         options={{
           title: "Explore",
-          tabBarIcon: ({ color }) => <FontAwesome name="search" size={28} style={{ marginBottom: -3 }} color={color} />,
+          tabBarIcon: ({ color, focused }) => <FontAwesome name="search" size={focused ? 30 : 28} style={{ marginBottom: -3 }} color={color} />,
         }}
       />
       <Tabs.Screen
@@ -62,7 +67,7 @@ export default function TabLayout() {
         options={{
           title: 'Account',
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'person' : 'person-outline'} size={24} color={color} />
+            <Ionicons name={focused ? 'person-circle' : 'person-circle-outline'} size={focused ? 30: 28} color={color} style={{ marginBottom: -3 }} />
           ),
         }}
       />
