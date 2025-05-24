@@ -13,6 +13,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { supabase } from "../../lib/supabase";
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 
 interface ExclusiveRecipeData {
 	description: string;
@@ -193,7 +194,7 @@ const AccountScreen = () => {
 	}: { item: PurchasedRecipeInfo }) => (
 		<TouchableOpacity
 			className="bg-white p-4 rounded-lg shadow mb-3 flex-row items-center"
-			onPress={() => Alert.alert("Access Recipe", `You clicked on ${item.recipeName}. Access to full instructions would be granted here.`)}
+			onPress={() => router.push(`/exclusive-recipe/${item.recipeId}`)}
 		>
 			<Image
 				source={{ uri: item.recipeImageUrl || placeholderImageUrl }}
