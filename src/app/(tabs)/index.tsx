@@ -1,58 +1,33 @@
 import type React from 'react';
 import { ScrollView, View, Text, FlatList, TouchableOpacity, Image } from 'react-native';
-import RecipeCard from '../../components/RecipeCard'; // Assuming RecipeCard is in src/components
-import { Ionicons } from '@expo/vector-icons'; // For Create button icon
+import RecipeCard from '../../components/RecipeCard';
+import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { recipes as allRecipes } from '../../mocks/recieps'; // Import from mocks
 
-const mockRecipes = [
-  {
-    id: '1',
-    imageUrl: 'https://via.placeholder.com/150/FFC107/000000?Text=Recipe1',
-    title: 'Menthia (Methi) Bhat',
-    cookTime: '60 mins',
-    prepTime: '1h 3m',
-    servings: '1-4',
-    category: 'Karnataka',
-    isVegetarian: true,
-  },
-  {
-    id: '2',
-    imageUrl: 'https://via.placeholder.com/150/00BCD4/FFFFFF?Text=Recipe2',
-    title: 'Chicken Seekh Biryani',
-    cookTime: '60 mins',
-    prepTime: '56 mins',
-    servings: '1-3',
-    category: 'Indian · Mug...',
-    isVegetarian: false,
-  },
-  {
-    id: '3',
-    imageUrl: 'https://via.placeholder.com/150/8BC34A/FFFFFF?Text=Recipe3',
-    title: 'Aloo Gobi Adrak',
-    cookTime: '45 mins',
-    prepTime: '20 mins',
-    servings: '2-3',
-    category: 'Punjabi',
-    isVegetarian: true,
-  },
-  {
-    id: '4',
-    imageUrl: 'https://via.placeholder.com/150/E91E63/FFFFFF?Text=Recipe4',
-    title: 'Creamy Tomato Pasta',
-    cookTime: '25 mins',
-    prepTime: '10 mins',
-    servings: '2',
-    category: 'Italian',
-    isVegetarian: true,
-  },
-];
+// Define a type for a single recipe based on your mock data structure
+interface Recipe {
+  id: string;
+  imageUrl: string; // This will now be the full Supabase URL from recieps.ts
+  title: string;
+  cookTime: string;
+  prepTime: string;
+  servings: string;
+  category: string;
+  isVegetarian?: boolean;
+}
+
+// The featured image URL - replace with your actual Supabase URL for the featured image
+const featuredImageUrl = 'https://fwcsgvyqmolgmbupulmv.supabase.co/storage/v1/object/public/common/recipe/WhatsApp%20Image%202025-05-24%20at%2012.47.30%20(1).jpeg'; 
 
 const HomeScreen: React.FC = () => {
   const { top } = useSafeAreaInsets();
 
-  const renderRecipeItem = ({ item }: { item: (typeof mockRecipes)[0] }) => (
+  // Ensure the item type matches the structure in allRecipes
+  const renderRecipeItem = ({ item }: { item: Recipe }) => (
     <RecipeCard
-      imageUrl={item.imageUrl}
+      id={item.id}
+      imageUrl={item.imageUrl} // This will use the Supabase URL directly
       title={item.title}
       cookTime={item.cookTime}
       prepTime={item.prepTime}
@@ -70,10 +45,7 @@ const HomeScreen: React.FC = () => {
           <Text className="text-2xl font-bold text-gray-800">Good Morning</Text>
           <Text className="text-sm text-gray-500">What are you cooking today?</Text>
         </View>
-        <TouchableOpacity className="bg-purple-600 p-3 rounded-lg flex-row items-center">
-          <Ionicons name="add" size={20} color="white" />
-          <Text className="text-white font-semibold ml-1">Create</Text>
-        </TouchableOpacity>
+        {/* Create button removed */}
       </View>
 
       {/* Featured Section */}
@@ -90,7 +62,7 @@ const HomeScreen: React.FC = () => {
             </TouchableOpacity>
           </View>
           <Image 
-            source={{ uri: 'https://via.placeholder.com/100/FFC107/000000?Text=Food' }} 
+            source={{ uri: featuredImageUrl }} 
             className="w-24 h-24 rounded-lg ml-4"
           />
         </View>
@@ -102,7 +74,7 @@ const HomeScreen: React.FC = () => {
       </View>
       
 
-      {/* Recently Added Section */}
+      {/* Recently Added Section - Show first 10 */}
       <View className="px-4 mb-6">
         <View className="flex-row justify-between items-center mb-2">
           <Text className="text-xl font-bold text-gray-800">Recently Added</Text>
@@ -111,16 +83,16 @@ const HomeScreen: React.FC = () => {
           </TouchableOpacity>
         </View>
         <FlatList
-          data={mockRecipes.slice(0, 2)} // Show first 2 for recently added
+          data={allRecipes.slice(0, 10)} // Use allRecipes directly
           renderItem={renderRecipeItem}
           keyExtractor={(item) => `${item.id}-recent`}
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingRight: 16 }} // To avoid card cutoff
+          contentContainerStyle={{ paddingRight: 16 }} 
         />
       </View>
 
-      {/* All Time Favourites Section */}
+      {/* All Time Favourites Section - Show next 10 */}
       <View className="px-4 mb-6">
         <View className="flex-row justify-between items-center mb-2">
           <Text className="text-xl font-bold text-gray-800">All Time Favourites</Text>
@@ -129,12 +101,12 @@ const HomeScreen: React.FC = () => {
           </TouchableOpacity>
         </View>
         <FlatList
-          data={mockRecipes.slice(2, 4)} // Show next 2 for all time favourites
+          data={allRecipes.slice(10, 20)} // Use allRecipes directly
           renderItem={renderRecipeItem}
           keyExtractor={(item) => `${item.id}-favourites`}
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingRight: 16 }} // To avoid card cutoff
+          contentContainerStyle={{ paddingRight: 16 }}
         />
       </View>
     </ScrollView>

@@ -1,8 +1,10 @@
 import type React from 'react';
-import { View, Text, Image, Dimensions } from 'react-native';
+import { View, Text, Image, TouchableOpacity, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 
 interface RecipeCardProps {
+  id: string;
   imageUrl: string;
   title: string;
   cookTime: string;
@@ -12,10 +14,8 @@ interface RecipeCardProps {
   isVegetarian?: boolean;
 }
 
-const { width } = Dimensions.get('window');
-const cardWidth = width / 2 - 24; // Adjust spacing as needed
-
 const RecipeCard: React.FC<RecipeCardProps> = ({
+  id,
   imageUrl,
   title,
   cookTime,
@@ -24,43 +24,52 @@ const RecipeCard: React.FC<RecipeCardProps> = ({
   category,
   isVegetarian,
 }) => {
+  const router = useRouter();
+
+  const handlePress = () => {
+    router.push(`/recipe/${id}`);
+  };
+
+  const displayImageUrl = imageUrl && !imageUrl.includes('via.placeholder.com') 
+    ? imageUrl 
+    : 'https://fwcsgvyqmolgmbupulmv.supabase.co/storage/v1/object/public/common/recipe_placeholder.png';
+
   return (
-    <View 
-      className="bg-white rounded-xl m-2 shadow-sm"
-      style={{ width: cardWidth }}
-    >
+    <TouchableOpacity 
+      onPress={handlePress} 
+      className={`bg-white rounded-xl shadow-md overflow-hidden w-64 mr-4 mb-4 ${Platform.OS === 'android' ? 'elevation-5' : ''}`}>
       <Image 
-        source={{ uri: imageUrl }} 
-        className="w-full rounded-t-xl"
-        style={{ height: cardWidth * 0.8 }}
+        source={{ uri: displayImageUrl }} 
+        className="w-full h-36" 
+        resizeMode="cover" 
       />
-      <View className="absolute top-2 right-2 bg-black/30 rounded-full p-1">
-        <Ionicons name="heart-outline" size={24} color="white" />
-      </View>
       <View className="p-3">
-        <View className="flex-row items-center mb-1">
-          {isVegetarian !== undefined && (
-            <View
-              className={`w-2 h-2 rounded-full mr-1.5 ${
-                isVegetarian ? 'bg-green-500' : 'bg-red-500'
-              }`}
-            />
-          )}
-          <Text className="text-xs text-gray-600">{category}</Text>
+        <Text className="text-xs text-purple-600 font-semibold mb-1 uppercase tracking-wider">{category}</Text>
+        <Text className="text-lg font-bold text-gray-800 mb-1 truncate" numberOfLines={1}>{title}</Text>
+        
+        <View className="flex-row items-center text-gray-600 mb-2">
+          <Ionicons name="time-outline" size={14} color="#4B5563" />
+          <Text className="ml-1 text-xs">{prepTime} prep</Text>
+          <Ionicons name="flame-outline" size={14} color="#4B5563" style={{ marginLeft: 8 }} />
+          <Text className="ml-1 text-xs">{cookTime}</Text>
         </View>
-        <Text className="text-base font-bold text-gray-800 mb-2 leading-5" numberOfLines={2} style={{ minHeight: 40 }}>
-          {title}
-        </Text>
-        <View className="flex-row items-center mt-1">
-          <Ionicons name="time-outline" size={16} color="#666" />
-          <Text className="text-xs text-gray-600 ml-1">{cookTime}</Text>
-          <Ionicons name="timer-outline" size={16} color="#666" style={{ marginLeft: 8 }} />
-          <Text className="text-xs text-gray-600 ml-1">{prepTime}</Text>
-          <Ionicons name="people-outline" size={16} color="#666" style={{ marginLeft: 8 }} />
-          <Text className="text-xs text-gray-600 ml-1">{servings}</Text>
+
+        <View className="flex-row items-center justify-between mt-1">
+          <View className="flex-row items-center">
+            <Ionicons name="restaurant-outline" size={14} color="#4B5563" />
+            <Text className="ml-1 text-xs text-gray-600">{servings} servings</Text>
+          </View>
+          {isVegetarian !== undefined && (
+            <View 
+              className={`px-2 py-0.5 rounded-full ${isVegetarian ? 'bg-green-100' : 'bg-red-100'}`}>
+              <Text className={`text-xs font-medium ${isVegetarian ? 'text-green-700' : 'text-red-700'}`}>
+                {isVegetarian ? 'VEG' : 'NON-VEG'}
+              </Text>
+            </View>
+          )}
         </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 };
 
