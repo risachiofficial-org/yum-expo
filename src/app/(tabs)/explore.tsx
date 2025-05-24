@@ -7,6 +7,7 @@ import {
 	Modal,
 	ActivityIndicator,
 	Image,
+	Alert,
 } from "react-native";
 import { supabase } from "../../lib/supabase"; // Assuming supabase client is here
 import { Ionicons } from "@expo/vector-icons";
@@ -38,6 +39,15 @@ interface FetchedExclusiveRecipeItem {
 	data: ExclusiveRecipeData | null;
 }
 
+interface UserProfile {
+	id: number; // This is the YUM_users table ID
+	authUserId: string | null; // Can be null if not using auth_user_id directly for fetch
+	name: string | null;
+	balance: string;
+}
+
+const HARDCODED_USER_ID = 1;
+
 // Placeholder image if specific recipe image is not available
 const placeholderImageUrl =
 	"https://placehold.co/600x400/EEE/31343C?text=Recipe";
@@ -50,14 +60,46 @@ export default function ExploreScreen() {
 	const [selectedRecipe, setSelectedRecipe] = useState<ExclusiveRecipe | null>(
 		null,
 	);
+	const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
+	const [isPurchasing, setIsPurchasing] = useState(false);
 
 	useEffect(() => {
-		const fetchExclusiveRecipes = async () => {
+		const initializeScreen = async () => {
+			setLoading(true);
+			setError(null);
+
+			// Fetch user profile for hardcoded user ID 1
 			try {
-				setLoading(true);
-				setError(null);
+				console.log(`Fetching profile for hardcoded user ID: ${HARDCODED_USER_ID}`);
+				const { data: userProfile, error: profileError } = await supabase
+					.from('YUM_users')
+					.select('id, auth_user_id, name, balance') // auth_user_id can be null
+					.eq('id', HARDCODED_USER_ID)
+					.single();
+
+				if (profileError) {
+					console.error("Error fetching user profile for ID 1:", profileError);
+					setError(`Could not load profile for user ID ${HARDCODED_USER_ID}. Ensure this user exists and has a balance.`);
+				} else if (userProfile) {
+					console.log("User profile fetched:", userProfile);
+					setCurrentUser({
+						id: userProfile.id,
+						authUserId: userProfile.auth_user_id, // Keep it even if null
+						name: userProfile.name,
+						balance: userProfile.balance,
+					} as UserProfile);
+				} else {
+					setError(`User with ID ${HARDCODED_USER_ID} not found.`);
+				}
+			} catch (e: unknown) {
+				console.error("Exception fetching user profile:", e);
+				setError("An unexpected error occurred while loading user profile.");
+			}
+
+			// Fetch exclusive recipes (even if user profile fetch fails, to show recipes)
+			try {
 				const { data: fetchedData, error: fetchError } = await supabase
-					.from("YUM_exclusive_recipes") // Correct table name
+					.from("YUM_exclusive_recipes")
 					.select("id, name, price, data")
 					.returns<FetchedExclusiveRecipeItem[]>();
 
@@ -69,8 +111,7 @@ export default function ExploreScreen() {
 					const formattedRecipes: ExclusiveRecipe[] = fetchedData.map(
 						(item) => ({
 							...item,
-							id: item.id.toString(), // Ensure id is a string for keys
-							// Name, price, and data are already in the correct shape if not null
+							id: item.id.toString(),
 						}),
 					);
 					setRecipes(formattedRecipes);
@@ -79,20 +120,98 @@ export default function ExploreScreen() {
 				}
 			} catch (e: unknown) {
 				console.error("Failed to fetch exclusive recipes:", e);
-				if (e instanceof Error) {
-					setError(e.message || "Failed to load exclusive recipes.");
-				} else {
-					setError("An unexpected error occurred.");
-				}
+				const recipeErrorMsg = e instanceof Error ? e.message : "Failed to load exclusive recipes.";
+				setError((prevError) => prevError ? `${prevError}\n${recipeErrorMsg}` : recipeErrorMsg);
 			} finally {
 				setLoading(false);
 			}
 		};
 
-		fetchExclusiveRecipes();
+		initializeScreen();
 	}, []);
 
+	const handleBuyRecipe = async () => {
+		if (!selectedRecipe || !currentUser || !selectedRecipe.price) {
+			Alert.alert("Error", "Recipe or user information is missing, or price is not set.");
+			return;
+		}
+
+		// Ensure currentUser.id is the one we expect (hardcoded or fetched)
+		if (currentUser.id !== HARDCODED_USER_ID && !currentUser.authUserId) {
+			Alert.alert("Error", "User identification issue. Please restart the app.");
+			return;
+		}
+
+		setIsPurchasing(true);
+		const recipePrice = Number.parseFloat(selectedRecipe.price);
+		const userBalance = Number.parseFloat(currentUser.balance);
+
+		if (Number.isNaN(recipePrice) || recipePrice <= 0) {
+			Alert.alert("Error", "Invalid recipe price.");
+			setIsPurchasing(false);
+			return;
+		}
+
+		if (userBalance < recipePrice) {
+			Alert.alert("Insufficient Balance", "You do not have enough YUM tokens to purchase this recipe.");
+			setIsPurchasing(false);
+			return;
+		}
+
+		try {
+			// 1. Deduct balance
+			const newBalance = userBalance - recipePrice;
+			const { error: balanceError } = await supabase
+				.from('YUM_users')
+				.update({ balance: newBalance.toString() })
+				.eq('id', currentUser.id); // Use the fetched currentUser.id which should be HARDCODED_USER_ID
+
+			if (balanceError) {
+				throw new Error(`Failed to update balance: ${balanceError.message}`);
+			}
+
+			// 2. Record purchase
+			const { error: purchaseError } = await supabase
+				.from('YUM_purchased_recipes')
+				.insert({
+					user_id: currentUser.id, // Use the fetched currentUser.id
+					recipe_id: Number.parseInt(selectedRecipe.id, 10),
+					price_paid: selectedRecipe.price, // Store original string price
+					purchase_details: { purchasedFrom: "ExploreTab", method: "hardcodedUser" },
+				});
+
+			if (purchaseError) {
+				console.warn("Purchase record failed, attempting to revert balance. This is not guaranteed.");
+				await supabase
+					.from('YUM_users')
+					.update({ balance: currentUser.balance }) 
+					.eq('id', currentUser.id);
+				throw new Error(`Failed to record purchase: ${purchaseError.message}. Balance revert attempted.`);
+			}
+
+			setCurrentUser({ ...currentUser, balance: newBalance.toString() });
+			Alert.alert("Success!", `You have successfully purchased ${selectedRecipe.name}.`);
+			setModalVisible(false);
+			setSelectedRecipe(null);
+
+		} catch (e: unknown) {
+			console.error("Purchase failed:", e);
+			if (e instanceof Error) {
+				Alert.alert("Purchase Failed", e.message);
+			} else {
+				Alert.alert("Purchase Failed", "An unexpected error occurred during purchase.");
+			}
+		} finally {
+			setIsPurchasing(false);
+		}
+	};
+
 	const openModal = (recipe: ExclusiveRecipe) => {
+		if (!currentUser) {
+			// This condition might be hit if the initial fetch for HARDCODED_USER_ID failed
+			Alert.alert("User Profile Error", error || "User profile not loaded. Cannot open purchase modal.");
+			return;
+		}
 		setSelectedRecipe(recipe);
 		setModalVisible(true);
 	};
@@ -131,7 +250,7 @@ export default function ExploreScreen() {
 		);
 	}
 
-	if (error) {
+	if (error && !recipes.length && !currentUser) { // Show full screen error if critical (e.g. user profile fails and no recipes either)
 		return (
 			<View className="flex-1 justify-center items-center bg-gray-50 px-4">
 				<Ionicons name="alert-circle-outline" size={48} color="red" />
@@ -145,9 +264,15 @@ export default function ExploreScreen() {
 
 	return (
 		<View className="flex-1 bg-gray-50 pt-4">
-			<Text className="text-2xl font-bold text-gray-800 px-4 mb-4">
+			<Text className="text-2xl font-bold text-gray-800 px-4 mb-2">
 				Exclusive Recipes
 			</Text>
+			{error && (
+				<Text className="text-sm text-red-500 px-4 mb-2 text-center">
+					{error} {currentUser ? "(Recipe loading might have also failed)" : "(User profile failed to load)"}
+				</Text>
+			)}
+
 			{recipes.length > 0 ? (
 				<FlatList
 					data={recipes}
@@ -156,12 +281,14 @@ export default function ExploreScreen() {
 					contentContainerStyle={{ paddingBottom: 20 }}
 				/>
 			) : (
-				<View className="flex-1 justify-center items-center">
-					<Ionicons name="file-tray-outline" size={48} color="#9CA3AF" />
-					<Text className="mt-2 text-gray-500">
-						No exclusive recipes available right now.
-					</Text>
-				</View>
+				!loading && (
+					<View className="flex-1 justify-center items-center">
+						<Ionicons name="file-tray-outline" size={48} color="#9CA3AF" />
+						<Text className="mt-2 text-gray-500">
+							No exclusive recipes available right now.
+						</Text>
+					</View>
+				)
 			)}
 
 			{selectedRecipe && (
@@ -206,21 +333,23 @@ export default function ExploreScreen() {
 								Price: {selectedRecipe.price} YUM
 							</Text>
 							<Text className="text-gray-600 mb-4">
-								Your YUM Balance: <Text className="font-semibold"> -- YUM</Text>
+								Your YUM Balance: <Text className="font-semibold">{currentUser?.balance || '--'} YUM</Text>
 							</Text>
 
 							<TouchableOpacity
-								className="bg-purple-600 py-3 rounded-lg items-center shadow-md hover:bg-purple-700 transition-colors duration-150"
-								onPress={() => {
-									// Buy logic will go here
-									console.log("Buy button pressed for:", selectedRecipe.name);
-									setModalVisible(false);
-									setSelectedRecipe(null);
-								}}
+								className={`py-3 rounded-lg items-center shadow-md transition-colors duration-150 ${
+									isPurchasing ? 'bg-gray-400' : 'bg-purple-600 hover:bg-purple-700'
+								}`}
+								onPress={handleBuyRecipe}
+								disabled={isPurchasing || !currentUser}
 							>
-								<Text className="text-white text-lg font-semibold">
-									Confirm Purchase
-								</Text>
+								{isPurchasing ? (
+									<ActivityIndicator size="small" color="#ffffff" />
+								) : (
+									<Text className="text-white text-lg font-semibold">
+										Confirm Purchase
+									</Text>
+								)}
 							</TouchableOpacity>
 							<TouchableOpacity
 								className="mt-2 border border-gray-300 py-3 rounded-lg items-center hover:bg-gray-100 transition-colors duration-150"
@@ -228,6 +357,7 @@ export default function ExploreScreen() {
 									setModalVisible(false);
 									setSelectedRecipe(null);
 								}}
+								disabled={isPurchasing}
 							>
 								<Text className="text-gray-700 text-lg">Cancel</Text>
 							</TouchableOpacity>
