@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { supabase } from "../../lib/supabase"; // Assuming supabase client is here
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router"; // Import router
 
 // Define a type for the data stored within the 'data' jsonb column
 interface ExclusiveRecipeData {
@@ -193,6 +194,7 @@ export default function ExploreScreen() {
 			Alert.alert("Success!", `You have successfully purchased ${selectedRecipe.name}.`);
 			setModalVisible(false);
 			setSelectedRecipe(null);
+			router.push("/(tabs)/account"); // Navigate to account screen
 
 		} catch (e: unknown) {
 			console.error("Purchase failed:", e);

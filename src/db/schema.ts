@@ -44,3 +44,17 @@ export const purchasedRecipes = pgTable("YUM_purchased_recipes", {
 	pricePaid: numeric("price_paid").notNull(),
 	purchaseDetails: jsonb("purchase_details"), // e.g., transaction ID, discounts applied
 });
+
+export const userRewards = pgTable("YUM_user_rewards", {
+	id: serial("id").primaryKey(),
+	userId: integer("user_id")
+		.notNull()
+		.references(() => users.id),
+	title: text("title").notNull(),
+	description: text("description"),
+	imageUrl: text("image_url"), // URL to the reward image (e.g., NFT image)
+	dateAwarded: timestamp("date_awarded", { withTimezone: true })
+		.notNull()
+		.defaultNow(),
+	// Add other relevant fields like reward_type, nft_contract_address, nft_token_id if needed later
+});

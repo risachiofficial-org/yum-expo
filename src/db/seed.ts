@@ -4,9 +4,11 @@ import * as dotenv from "dotenv";
 import {
 	recipes as recipeTableSchema,
 	exclusiveRecipes as exclusiveRecipeTableSchema,
+	userRewards as userRewardsTableSchema,
 } from "./schema"; // Assuming your schema is in schema.ts
 import { recipes as mockRecipes } from "../mocks/recieps"; // Path to your mock data
 import { exclusiveRecipes as mockExclusiveRecipes } from "../mocks/exclusiveRecipes"; // Path to your mock exclusive recipe data
+import { userRewards as mockUserRewards } from "../mocks/userRewards"; // Import mock user rewards
 
 dotenv.config();
 
@@ -73,10 +75,39 @@ async function main() {
 		console.log("Finished seeding exclusive recipes.");
 	}
 
+	// Seed user rewards if 'userRewards' or no arg provided
+	if (tableToSeed === "userRewards" || !tableToSeed) {
+		console.log("Seeding user rewards...");
+		for (const reward of mockUserRewards) {
+			try {
+				const result = await db
+					.insert(userRewardsTableSchema)
+					.values({
+						userId: reward.userId,
+						title: reward.title,
+						description: reward.description,
+						imageUrl: reward.imageUrl,
+						// dateAwarded will use the database default
+					})
+					.returning();
+				console.log(
+					`Inserted user reward: ${result[0]?.title} for user ID ${result[0]?.userId} (ID: ${result[0]?.id})`,
+				);
+			} catch (error) {
+				console.error(
+					`Error inserting user reward ${reward.title}:`,
+					error,
+				);
+			}
+		}
+		console.log("Finished seeding user rewards.");
+	}
+
 	if (
 		tableToSeed &&
 		tableToSeed !== "recipes" &&
-		tableToSeed !== "exclusiveRecipes"
+		tableToSeed !== "exclusiveRecipes" &&
+		tableToSeed !== "userRewards"
 	) {
 		console.warn(`Unknown table to seed: ${tableToSeed}. No data seeded.`);
 	}
