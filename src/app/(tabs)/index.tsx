@@ -1,20 +1,35 @@
-import type React from 'react';
-import { ScrollView, View, Text, FlatList, TouchableOpacity, Image } from 'react-native';
+import type React from 'react'; // Use import type for React
+import { useEffect, useState } from 'react';
+import { ScrollView, View, Text, FlatList, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
 import RecipeCard from '../../components/RecipeCard';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { recipes as allRecipes } from '../../mocks/recieps'; // Import from mocks
+// import { recipes as allRecipes } from '../../mocks/recieps'; // Remove mock import
+import { supabase } from '../../lib/supabase'; // Import Supabase client
 
 // Define a type for a single recipe based on your mock data structure
+// This should match the structure of the objects stored in the 'data' column of your YUM_recipes table
 interface Recipe {
   id: string;
-  imageUrl: string; // This will now be the full Supabase URL from recieps.ts
+  imageUrl: string;
   title: string;
   cookTime: string;
   prepTime: string;
   servings: string;
   category: string;
   isVegetarian?: boolean;
+  // Add any other fields you expect from the 'data' column
+  // For example, if your 'data' column also contains nutrition, allergens, ingredients, instructions
+  nutrition?: { kcal: string; protein: string; fats: string; carbs: string; };
+  allergens?: string[];
+  ingredients?: Array<{ name: string; quantity: string; unit: string; imageUrl?: string }>;
+  instructions?: string[];
+}
+
+// Type for the raw data fetched from Supabase (data column + db id)
+interface FetchedRecipeDataItem {
+  id: number; // Supabase returns id as number from serial
+  data: Omit<Recipe, 'id'>; // The 'data' column contains the rest of the Recipe fields
 }
 
 // The featured image URL - replace with your actual Supabase URL for the featured image
@@ -22,12 +37,52 @@ const featuredImageUrl = 'https://fwcsgvyqmolgmbupulmv.supabase.co/storage/v1/ob
 
 const HomeScreen: React.FC = () => {
   const { top } = useSafeAreaInsets();
+  const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Ensure the item type matches the structure in allRecipes
+  useEffect(() => {
+    const fetchRecipes = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const { data: fetchedRecipesData, error: fetchError } = await supabase
+          .from('YUM_recipes')
+          .select('id, data') // Select id for key and data for recipe content
+          .returns<FetchedRecipeDataItem[]>(); // Specify return type for better type safety
+
+        if (fetchError) {
+          throw fetchError;
+        }
+
+        if (fetchedRecipesData) {
+          const formattedRecipes: Recipe[] = fetchedRecipesData.map((item) => ({
+            ...item.data, // Spread the contents of the data object
+            id: item.id.toString(), // Ensure id is a string for keys
+          })); 
+          setRecipes(formattedRecipes);
+        } else {
+          setRecipes([]);
+        }
+      } catch (e: unknown) { // Use unknown for safer error handling
+        console.error('Failed to fetch recipes:', e);
+        if (e instanceof Error) {
+          setError(e.message || 'Failed to load recipes. Please try again later.');
+        } else {
+          setError('An unexpected error occurred.');
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRecipes();
+  }, []);
+
   const renderRecipeItem = ({ item }: { item: Recipe }) => (
     <RecipeCard
       id={item.id}
-      imageUrl={item.imageUrl} // This will use the Supabase URL directly
+      imageUrl={item.imageUrl}
       title={item.title}
       cookTime={item.cookTime}
       prepTime={item.prepTime}
@@ -36,6 +91,26 @@ const HomeScreen: React.FC = () => {
       isVegetarian={item.isVegetarian}
     />
   );
+
+  if (loading) {
+    return (
+      <View className="flex-1 justify-center items-center bg-gray-50" style={{ paddingTop: top }}>
+        <ActivityIndicator size="large" color="#8B5CF6" />
+        <Text className="mt-2 text-gray-600">Loading recipes...</Text>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View className="flex-1 justify-center items-center bg-gray-50 px-4" style={{ paddingTop: top }}>
+        <Ionicons name="alert-circle-outline" size={48} color="red" />
+        <Text className="mt-2 text-lg text-red-600 text-center">Oops! Something went wrong.</Text>
+        <Text className="mt-1 text-sm text-gray-500 text-center">{error}</Text>
+        {/* You could add a retry button here */}
+      </View>
+    );
+  }
 
   return (
     <ScrollView className="flex-1 bg-gray-50" style={{ paddingTop: top }}>
@@ -83,7 +158,7 @@ const HomeScreen: React.FC = () => {
           </TouchableOpacity>
         </View>
         <FlatList
-          data={allRecipes.slice(0, 10)} // Use allRecipes directly
+          data={recipes.slice(0, 10)} // Use fetched recipes
           renderItem={renderRecipeItem}
           keyExtractor={(item) => `${item.id}-recent`}
           horizontal
@@ -101,7 +176,7 @@ const HomeScreen: React.FC = () => {
           </TouchableOpacity>
         </View>
         <FlatList
-          data={allRecipes.slice(10, 20)} // Use allRecipes directly
+          data={recipes.slice(10, 20)} // Use fetched recipes
           renderItem={renderRecipeItem}
           keyExtractor={(item) => `${item.id}-favourites`}
           horizontal
