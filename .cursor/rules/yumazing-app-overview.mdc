@@ -5,7 +5,7 @@ alwaysApply: false
 ---
 # Yumazing App Overview
 
-Yumazing is a cross-platform mobile application built with Expo and React Native. Its primary goal is to help users cook by providing recipes from the community. The app also features a system to reward users with tokens and NFTs for achieving certain milestones.
+Yumazing is a cross-platform mobile application built with Expo and React Native. Its primary goal is to help users cook by providing recipes from the community. The app leverages Supabase for its backend and data storage. It also features a system to reward users with tokens and NFTs for achieving certain milestones.
 
 For a more comprehensive overview of the product vision and features, please refer to the document: [`So bascially we are building a cooking assitant b....pdf`](mdc:So bascially we are building a cooking assitant b....pdf).
 
@@ -14,12 +14,13 @@ For a more comprehensive overview of the product vision and features, please ref
 The project is organized as follows:
 
 *   **`app/`**: Contains the main application screens and navigation setup using Expo Router.
-    *   **`app/(tabs)/`**: This directory holds the layout and screens for the tab-based navigation in the app. Based on the UI, these tabs are likely Home, Explore, Planner, and Account.
+    *   **`app/(tabs)/`**: This directory holds the layout and screens for the tab-based navigation in the app. These tabs include Home, Explore, and Account.
         *   [`app/(tabs)/_layout.tsx`](mdc:app/(tabs)/_layout.tsx): Defines the layout for the tabs themselves, likely using `expo-router`'s `Tabs` component. It configures the appearance and behavior of the tab bar.
-        *   [`app/(tabs)/index.tsx`](mdc:app/(tabs)/index.tsx): Represents the screen for the first tab, which is conventionally the "Home" screen. This is where users might see an overview, recently added recipes, or featured content.
-        *   [`app/(tabs)/two.tsx`](mdc:app/(tabs)/two.tsx): Represents the screen for the second tab. Given the UI, this could be the "Explore" screen for recipe discovery or potentially another core feature. (Note: The filename `two.tsx` is generic; it would be beneficial to rename it to reflect its actual purpose, e.g., `explore.tsx` or `planner.tsx`, once its function is solidified).
-    *   [`app/_layout.tsx`](mdc:app/_layout.tsx): Main layout component for the overall app, potentially wrapping the tab navigator and handling global styles or providers.
+        *   [`app/(tabs)/index.tsx`](mdc:app/(tabs)/index.tsx): Represents the screen for the "Home" screen. This screen fetches and displays a list of general recipes from Supabase.
+        *   [`app/(tabs)/explore.tsx`](mdc:src/app/(tabs)/explore.tsx): Represents the screen for the "Explore" tab. This screen fetches and displays "exclusive" recipes from Supabase and includes a modal for a purchase flow.
+    *   [`app/_layout.tsx`](mdc:app/_layout.tsx): Main layout component for the overall app, potentially wrapping the tab navigator and handling global styles or providers. Includes necessary polyfills.
     *   [`app/modal.tsx`](mdc:app/modal.tsx): A modal screen, possibly used for actions like creating a new recipe or displaying detailed information.
+    *   [`app/recipe/[id].tsx`](mdc:src/app/recipe/[id].tsx): Screen to display detailed information for a specific recipe, fetched from Supabase based on its ID.
 *   **`assets/`**: Stores static assets like images and fonts.
     *   `assets/fonts/`: Custom fonts used in the app.
     *   `assets/images/`: Images, including icons and splash screens.
@@ -28,17 +29,30 @@ The project is organized as follows:
     *   `components/EditScreenInfo.tsx`: An example component (likely for placeholder content or development purposes).
 *   **`constants/`**: Defines application-wide constants.
     *   `constants/Colors.ts`: Defines the color palette for the app.
+*   **`db/`**: Contains database-related files.
+    *   [`db/schema.ts`](mdc:src/db/schema.ts): Defines the Drizzle ORM schema for PostgreSQL, including tables like `YUM_recipes`, `YUM_exclusive_recipes`, `YUM_users`, and `YUM_purchased_recipes`.
+    *   [`db/seed.ts`](mdc:src/db/seed.ts): Script to seed the database with initial data, capable of targeting specific tables.
+*   **`lib/`**: Contains library code, like the Supabase client setup.
+    *   [`lib/supabase.ts`](mdc:src/lib/supabase.ts): Initializes and exports the Supabase client for interacting with the backend.
+*   **`mocks/`**: Contains mock data files.
+    *   `mocks/recieps.ts`: Mock data for general recipes (note: application is transitioning to Supabase).
+    *   `mocks/exclusiveRecipes.ts`: Mock data for exclusive recipes (note: application is transitioning to Supabase).
 
 ## Key Configuration Files
 
-*   **[`app.json`](mdc:app.json)**: Expo configuration file. It includes settings for the app's name, version, icon, splash screen, orientation, and platform-specific configurations for iOS, Android, and Web. It also lists plugins like `expo-router` and experiments like `typedRoutes`.
-*   **[`package.json`](mdc:package.json)**: Lists project dependencies (e.g., `expo`, `react`, `react-native`, `expo-router`) and development dependencies (e.g., `typescript`, `jest`). It also defines scripts for starting the app, running tests, etc.
-*   **[`tsconfig.json`](mdc:tsconfig.json)**: TypeScript configuration file, extending `expo/tsconfig.base`. It includes strict mode and path aliases (e.g., `@/*` pointing to `./*`).
+*   **[`app.json`](mdc:app.json)**: Expo configuration file.
+*   **[`package.json`](mdc:package.json)**: Lists project dependencies (e.g., `expo`, `react`, `react-native`, `expo-router`, `nativewind`, `@supabase/supabase-js`, `drizzle-orm`) and development dependencies.
+*   **[`tsconfig.json`](mdc:tsconfig.json)**: TypeScript configuration file.
+*   **[`tailwind.config.js`](mdc:tailwind.config.js)**: Configuration file for Tailwind CSS, used with NativeWind.
+*   **[`metro.config.js`](mdc:metro.config.js)**: Configuration file for the Metro bundler, set up to work with NativeWind.
+*   **[`drizzle.config.ts`](mdc:drizzle.config.ts)**: Configuration file for Drizzle ORM.
+*   **`.env`**: Environment file to store secrets like Supabase URL and keys (not part of the overview, but important to note).
 
 ## Core Functionality (MVP Focus for Hackathon)
 
-*   **Recipe Discovery**: Users can browse and search for recipes. (Focus on displaying a list of recipes, potentially from a mock data source initially).
-*   **View Recipe Details**: Users can tap on a recipe to see its details (ingredients, steps).
+*   **Recipe Discovery**: Users can browse and search for recipes. (Recipes are fetched from Supabase).
+*   **View Recipe Details**: Users can tap on a recipe to see its details (ingredients, steps), fetched from Supabase.
+*   **Exclusive Recipes**: Users can view exclusive recipes and initiate a (placeholder) purchase flow.
 *   **Cooking Assistance**: Basic step-by-step instructions for a selected recipe.
 *   **(Future) Rewards System**: Placeholder for token/NFT rewards; full implementation might be out of scope for an MVP unless critical.
 *   **(Future) Community Features**: Recipe submission by users might be a post-MVP feature.
