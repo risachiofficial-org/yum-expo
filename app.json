@@ -6,6 +6,9 @@
     "web": {
       "output": "static"
     },
+    "android": {
+      "package": "com.permissionless_devops.yumexpo"
+    },
     "plugins": [
       [
         "expo-router",
@@ -15,6 +18,14 @@
       ]
     ],
     "name": "yum-expo",
-    "slug": "yum-expo"
+    "slug": "yum-expo",
+    "extra": {
+      "router": {
+        "origin": "https://n"
+      },
+      "eas": {
+        "projectId": "f960c15a-99a2-4538-979f-c984c26a7b25"
+      }
+    }
   }
 }
