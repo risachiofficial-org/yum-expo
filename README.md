@@ -102,7 +102,8 @@ This customized "Yumazing Chain" (as an Avalanche Subnet) is ideal for a sophist
 
 ## Technical Architecture: Cooking Assistant Meets Avalanche
 
-![Conceptual Architecture Diagram - Placeholder](https://via.placeholder.com/800x400.png?text=Yumazing+Technical+Architecture+Diagram)
+![Conceptual Architecture Diagram - Placeholder](public/architecture.png)
+
 *Note: Replace with an actual architecture diagram if available.*
 
 ### 1. The Yumazing AI Cooking Assistant (Hardware/Software)
