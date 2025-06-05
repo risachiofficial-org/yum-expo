@@ -33,8 +33,6 @@ Current smart cooking assistants offer a degree of recipe guidance and automatio
 
 By integrating with the Avalanche blockchain, Yumazing transforms from a standalone assistant into an interactive platform, unlocking tangible economic and social benefits for its users.
 
-![Yumazing Team](public/team.png)
-
 ## Avalanche L1 Integrated Features (The "Yumazing Ecosystem")
 
 ### 1. Cook-to-Earn with Yum Tokens (YUM) 💰

@@ -5,6 +5,9 @@ import { SUPABASE_URL, SUPABASE_ANON_KEY } from '@env';
 
 // dotenv.config(); // Ensure environment variables are loaded
 
+console.log("SUPABASE_URL:", SUPABASE_URL);
+console.log("SUPABASE_ANON_KEY:", SUPABASE_ANON_KEY ? "Loaded (key hidden for security)" : "NOT LOADED");
+
 if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
 	throw new Error(
 		"SUPABASE_URL or SUPABASE_ANON_KEY is not set in .env file. Please ensure these are correctly configured before starting the application.",
